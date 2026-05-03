@@ -9,7 +9,12 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800&display=swap" rel="stylesheet" />
-  <style>* { box-sizing: border-box; margin: 0; padding: 0; } body { background: #0f1923; } button:active { transform: scale(0.97); }</style>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f1923; }
+    button:active { transform: scale(0.97); }
+    .drag-over { opacity: 0.4; }
+  </style>
 </head>
 <body>
   <div id="root"></div>
@@ -72,6 +77,8 @@
       const [titleDraft, setTitleDraft] = useState("");
       const [loaded, setLoaded] = useState(false);
       const [syncing, setSyncing] = useState(false);
+      const dragItem = useRef(null);
+      const dragOverItem = useRef(null);
       const saveTimeout = useRef(null);
 
       useEffect(() => {
@@ -80,7 +87,6 @@
           if (saved) { if (saved.days) setDays(saved.days); if (saved.title) setTitle(saved.title); }
           setLoaded(true);
         })();
-        // Poll every 10 seconds for updates
         const interval = setInterval(async () => {
           const saved = await loadFromSupabase();
           if (saved) { if (saved.days) setDays(saved.days); if (saved.title) setTitle(saved.title); }
@@ -97,6 +103,35 @@
           setSyncing(false);
         }, 800);
       }, [days, title, loaded]);
+
+      const handleDragStart = (idx) => { dragItem.current = idx; };
+      const handleDragEnter = (idx) => { dragOverItem.current = idx; };
+      const handleDragEnd = (dayId) => {
+        if (dragItem.current === null || dragOverItem.current === null) return;
+        setDays(days.map(d => {
+          if (d.id !== dayId) return d;
+          const items = [...d.items];
+          const dragged = items.splice(dragItem.current, 1)[0];
+          items.splice(dragOverItem.current, 0, dragged);
+          return { ...d, items };
+        }));
+        dragItem.current = null;
+        dragOverItem.current = null;
+      };
+
+      // Touch drag support
+      const touchStartY = useRef(null);
+      const touchDayId = useRef(null);
+      const handleTouchStart = (idx, dayId, e) => {
+        dragItem.current = idx;
+        touchDayId.current = dayId;
+        touchStartY.current = e.touches[0].clientY;
+      };
+      const handleTouchMove = (e) => { e.preventDefault(); };
+      const handleTouchEnd = (idx) => {
+        dragOverItem.current = idx;
+        handleDragEnd(touchDayId.current);
+      };
 
       const currentDay = days.find(d => d.id === activeDay) || days[0];
       const toggleDone = (dayId, itemId) => setDays(days.map(d => d.id === dayId ? { ...d, items: d.items.map(i => i.id === itemId ? { ...i, done: !i.done } : i) } : d));
@@ -151,8 +186,20 @@
 
           <div style={{ padding: "16px 16px 100px" }}>
             {currentDay.items.map((item, idx) => (
-              <div key={item.id} style={{ display: "flex", gap: 10, marginBottom: 2 }}>
+              <div
+                key={item.id}
+                draggable={editingId !== item.id}
+                onDragStart={() => handleDragStart(idx)}
+                onDragEnter={() => handleDragEnter(idx)}
+                onDragEnd={() => handleDragEnd(currentDay.id)}
+                onDragOver={e => e.preventDefault()}
+                onTouchStart={e => handleTouchStart(idx, currentDay.id, e)}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={() => handleTouchEnd(idx)}
+                style={{ display: "flex", gap: 10, marginBottom: 2, cursor: editingId !== item.id ? "grab" : "default" }}
+              >
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 32, paddingTop: 14 }}>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", marginBottom: 2 }}>☰</div>
                   <div style={{ width: 10, height: 10, borderRadius: "50%", flexShrink: 0, background: item.done ? currentDay.color : "rgba(255,255,255,0.15)", border: `2px solid ${item.done ? currentDay.color : "rgba(255,255,255,0.2)"}`, transition: "all 0.2s" }} />
                   {idx < currentDay.items.length - 1 && <div style={{ flex: 1, width: 1, background: "rgba(255,255,255,0.08)", minHeight: 16, marginTop: 4 }} />}
                 </div>
