@@ -7,6 +7,7 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800&display=swap" rel="stylesheet" />
   <style>* { box-sizing: border-box; margin: 0; padding: 0; } body { background: #0f1923; } button:active { transform: scale(0.97); }</style>
 </head>
@@ -14,7 +15,11 @@
   <div id="root"></div>
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
-    const STORAGE_KEY = "jeju-trip-v1";
+    const SUPABASE_URL = "https://bzkyfqpmrhxjvmjhwrhn.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6a3lmcXBtcmh4anZtamh3cmhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3OTQzMjAsImV4cCI6MjA5MzM3MDMyMH0.8un8WlpVYVFr0ktQIVvzGU6KjOUm2LzWWF90e1ery-U";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const DATA_KEY = "jeju-trip-v1";
+
     const defaultDays = [
       { id: 1, label: "Day 1", emoji: "🌊", color: "#4A90D9", items: [
         { id: "1-1", time: "아침", title: "우진해장국", desc: "牛骨解酒湯", done: false },
@@ -41,10 +46,21 @@
         { id: "3-6", time: "밤", title: "bye~ ✈️", desc: "", done: false },
       ]},
     ];
+
     function genId() { return Math.random().toString(36).slice(2, 9); }
     const inputStyle = { width: "100%", padding: "8px 10px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "#fff", fontSize: 13, outline: "none" };
     const btnPrimary = (color) => ({ flex: 1, padding: "8px", background: color, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 700 });
     const btnSecondary = { flex: 1, padding: "8px", background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", border: "none", borderRadius: 8, fontSize: 13, cursor: "pointer" };
+
+    async function loadFromSupabase() {
+      const { data } = await supabase.from("trip_data").select("value").eq("key", DATA_KEY).single();
+      if (data) return JSON.parse(data.value);
+      return null;
+    }
+
+    async function saveToSupabase(payload) {
+      await supabase.from("trip_data").upsert({ key: DATA_KEY, value: JSON.stringify(payload) }, { onConflict: "key" });
+    }
 
     function App() {
       const [days, setDays] = useState(defaultDays);
@@ -54,21 +70,33 @@
       const [title, setTitle] = useState("제주도 3일 여행");
       const [editingTitle, setEditingTitle] = useState(false);
       const [titleDraft, setTitleDraft] = useState("");
+      const [loaded, setLoaded] = useState(false);
+      const [syncing, setSyncing] = useState(false);
       const saveTimeout = useRef(null);
 
       useEffect(() => {
-        try {
-          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        (async () => {
+          const saved = await loadFromSupabase();
           if (saved) { if (saved.days) setDays(saved.days); if (saved.title) setTitle(saved.title); }
-        } catch(e) {}
+          setLoaded(true);
+        })();
+        // Poll every 10 seconds for updates
+        const interval = setInterval(async () => {
+          const saved = await loadFromSupabase();
+          if (saved) { if (saved.days) setDays(saved.days); if (saved.title) setTitle(saved.title); }
+        }, 10000);
+        return () => clearInterval(interval);
       }, []);
 
       useEffect(() => {
+        if (!loaded) return;
         clearTimeout(saveTimeout.current);
-        saveTimeout.current = setTimeout(() => {
-          try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ days, title })); } catch(e) {}
-        }, 600);
-      }, [days, title]);
+        saveTimeout.current = setTimeout(async () => {
+          setSyncing(true);
+          await saveToSupabase({ days, title });
+          setSyncing(false);
+        }, 800);
+      }, [days, title, loaded]);
 
       const currentDay = days.find(d => d.id === activeDay) || days[0];
       const toggleDone = (dayId, itemId) => setDays(days.map(d => d.id === dayId ? { ...d, items: d.items.map(i => i.id === itemId ? { ...i, done: !i.done } : i) } : d));
@@ -79,6 +107,12 @@
       const totalDone = days.reduce((s, d) => s + d.items.filter(i => i.done).length, 0);
       const totalItems = days.reduce((s, d) => s + d.items.length, 0);
       const pct = totalItems ? Math.round((totalDone / totalItems) * 100) : 0;
+
+      if (!loaded) return (
+        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0f1923", color: "#fff", fontSize: 18 }}>
+          불러오는 중…
+        </div>
+      );
 
       return (
         <div style={{ minHeight: "100vh", background: "#0f1923", fontFamily: "'Noto Sans KR', sans-serif", color: "#fff", maxWidth: 480, margin: "0 auto" }}>
@@ -99,6 +133,9 @@
                 <div style={{ height: "100%", borderRadius: 99, background: "linear-gradient(to right, #4A90D9, #5BAD8A)", width: `${pct}%`, transition: "width 0.5s ease" }} />
               </div>
               <div style={{ fontSize: 12, color: "#7CB8E8", whiteSpace: "nowrap" }}>{totalDone}/{totalItems} 완료</div>
+            </div>
+            <div style={{ fontSize: 10, color: syncing ? "#7CB8E8" : "rgba(255,255,255,0.25)", marginTop: 8, transition: "color 0.3s" }}>
+              {syncing ? "⟳ 동기화 중..." : "✦ 실시간 동기화 — 10초마다 자동 업데이트"}
             </div>
           </div>
 
