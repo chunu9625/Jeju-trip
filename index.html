@@ -169,7 +169,7 @@
                     <input value={editForm.time} onChange={e => setEditForm({ ...editForm, time: e.target.value })} placeholder="시간 (예: 점심)" style={inputStyle} />
                     <input value={editForm.title} onChange={e => setEditForm({ ...editForm, title: e.target.value })} placeholder="일정 이름" style={{ ...inputStyle, fontWeight: 700, fontSize: 15, marginTop: 6 }} />
                     <input value={editForm.desc} onChange={e => setEditForm({ ...editForm, desc: e.target.value })} placeholder="메모 (선택사항)" style={{ ...inputStyle, marginTop: 6, fontSize: 12 }} />
-                    <input value={editForm.map || ""} onChange={e => setEditForm({ ...editForm, map: e.target.value })} placeholder="📍 장소명 또는 주소 (Google Maps 연결)" style={{ ...inputStyle, marginTop: 6, fontSize: 12 }} />
+                    <input value={editForm.map || ""} onChange={e => setEditForm({ ...editForm, map: e.target.value })} placeholder="📍 장소명 또는 주소 (Naver Maps 연결)" style={{ ...inputStyle, marginTop: 6, fontSize: 12 }} />
                     <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
                       <button onClick={() => saveEdit(currentDay.id)} style={btnPrimary(currentDay.color)}>저장</button>
                       <button onClick={() => setEditingId(null)} style={btnSecondary}>취소</button>
@@ -187,7 +187,7 @@
                       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                         {item.map ? (
                           <a
-                            href={`https://maps.google.com/?q=${encodeURIComponent(item.map)}`}
+                            href={`https://map.naver.com/p/search/${encodeURIComponent(item.map)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={e => e.stopPropagation()}
