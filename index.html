@@ -22,28 +22,28 @@
 
     const defaultDays = [
       { id: 1, label: "Day 1", emoji: "🌊", color: "#4A90D9", items: [
-        { id: "1-1", time: "아침", title: "우진해장국", desc: "牛骨解酒湯", done: false },
-        { id: "1-2", time: "오전", title: "휴애리 자연생태공원", desc: "", done: false },
-        { id: "1-3", time: "오전", title: "카페 ①", desc: "", done: false },
-        { id: "1-4", time: "점심", title: "해물라면 / 회 / 해물", desc: "", done: false },
-        { id: "1-5", time: "오후", title: "동사무소", desc: "", done: false },
-        { id: "1-6", time: "저녁 7시", title: "저녁식사", desc: "", done: false },
+        { id: "1-1", time: "아침", title: "우진해장국", desc: "牛骨解酒湯", map: "우진해장국 제주", done: false },
+        { id: "1-2", time: "오전", title: "휴애리 자연생태공원", desc: "", map: "휴애리 자연생태공원", done: false },
+        { id: "1-3", time: "오전", title: "카페 ①", desc: "", map: "", done: false },
+        { id: "1-4", time: "점심", title: "해물라면 / 회 / 해물", desc: "", map: "", done: false },
+        { id: "1-5", time: "오후", title: "동사무소", desc: "", map: "", done: false },
+        { id: "1-6", time: "저녁 7시", title: "저녁식사", desc: "", map: "", done: false },
       ]},
       { id: 2, label: "Day 2", emoji: "🐷", color: "#E8855A", items: [
-        { id: "2-1", time: "오전", title: "섭소각", desc: "", done: false },
-        { id: "2-2", time: "오전", title: "카페 ②", desc: "", done: false },
-        { id: "2-3", time: "점심", title: "갈치 점심", desc: "", done: false },
-        { id: "2-4", time: "오후", title: "카페 ③", desc: "", done: false },
-        { id: "2-5", time: "오후", title: "카트", desc: "卡丁車", done: false },
-        { id: "2-6", time: "저녁", title: "흑돼지", desc: "", done: false },
+        { id: "2-1", time: "오전", title: "섭소각", desc: "", map: "섭소각 제주", done: false },
+        { id: "2-2", time: "오전", title: "카페 ②", desc: "", map: "", done: false },
+        { id: "2-3", time: "점심", title: "갈치 점심", desc: "", map: "", done: false },
+        { id: "2-4", time: "오후", title: "카페 ③", desc: "", map: "", done: false },
+        { id: "2-5", time: "오후", title: "카트", desc: "卡丁車", map: "제주 카트", done: false },
+        { id: "2-6", time: "저녁", title: "흑돼지", desc: "", map: "", done: false },
       ]},
       { id: 3, label: "Day 3", emoji: "✈️", color: "#5BAD8A", items: [
-        { id: "3-1", time: "아침", title: "제주시민오일장", desc: "", done: false },
-        { id: "3-2", time: "오전", title: "빈티지 쇼핑", desc: "", done: false },
-        { id: "3-3", time: "오후", title: "카페 ④", desc: "", done: false },
-        { id: "3-4", time: "오후", title: "LP 바 / 내도음악상가", desc: "", done: false },
-        { id: "3-5", time: "저녁", title: "소금바치순이네", desc: "", done: false },
-        { id: "3-6", time: "밤", title: "bye~ ✈️", desc: "", done: false },
+        { id: "3-1", time: "아침", title: "제주시민오일장", desc: "", map: "제주시민오일장", done: false },
+        { id: "3-2", time: "오전", title: "빈티지 쇼핑", desc: "", map: "", done: false },
+        { id: "3-3", time: "오후", title: "카페 ④", desc: "", map: "", done: false },
+        { id: "3-4", time: "오후", title: "LP 바 / 내도음악상가", desc: "", map: "내도음악상가 제주", done: false },
+        { id: "3-5", time: "저녁", title: "소금바치순이네", desc: "", map: "소금바치순이네", done: false },
+        { id: "3-6", time: "밤", title: "bye~ ✈️", desc: "", map: "제주국제공항", done: false },
       ]},
     ];
 
@@ -57,7 +57,6 @@
       if (data) return JSON.parse(data.value);
       return null;
     }
-
     async function saveToSupabase(payload) {
       await supabase.from("trip_data").upsert({ key: DATA_KEY, value: JSON.stringify(payload) }, { onConflict: "key" });
     }
@@ -113,7 +112,7 @@
       const startEdit = (item) => { setEditingId(item.id); setEditForm({ ...item }); };
       const saveEdit = (dayId) => { setDays(days.map(d => d.id === dayId ? { ...d, items: d.items.map(i => i.id === editingId ? { ...editForm, id: i.id } : i) } : d)); setEditingId(null); };
       const deleteItem = (dayId, itemId) => { setDays(days.map(d => d.id === dayId ? { ...d, items: d.items.filter(i => i.id !== itemId) } : d)); if (editingId === itemId) setEditingId(null); };
-      const addItem = (dayId) => { const newId = genId(); const blank = { id: newId, time: "", title: "새 일정", desc: "", done: false }; setDays(days.map(d => d.id === dayId ? { ...d, items: [...d.items, blank] } : d)); setEditingId(newId); setEditForm(blank); };
+      const addItem = (dayId) => { const newId = genId(); const blank = { id: newId, time: "", title: "새 일정", desc: "", map: "", done: false }; setDays(days.map(d => d.id === dayId ? { ...d, items: [...d.items, blank] } : d)); setEditingId(newId); setEditForm(blank); };
       const totalDone = days.reduce((s, d) => s + d.items.filter(i => i.done).length, 0);
       const totalItems = days.reduce((s, d) => s + d.items.length, 0);
       const pct = totalItems ? Math.round((totalDone / totalItems) * 100) : 0;
@@ -160,18 +159,9 @@
           <div style={{ padding: "16px 16px 100px" }}>
             {currentDay.items.map((item, idx) => (
               <div key={item.id} style={{ display: "flex", gap: 10, marginBottom: 2 }}>
-                {/* Up/Down buttons */}
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, paddingTop: 10, width: 24 }}>
-                  <button
-                    onClick={() => moveItem(currentDay.id, idx, -1)}
-                    disabled={idx === 0}
-                    style={{ width: 22, height: 22, borderRadius: 6, border: "none", background: idx === 0 ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.08)", color: idx === 0 ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.5)", cursor: idx === 0 ? "default" : "pointer", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}
-                  >▲</button>
-                  <button
-                    onClick={() => moveItem(currentDay.id, idx, 1)}
-                    disabled={idx === currentDay.items.length - 1}
-                    style={{ width: 22, height: 22, borderRadius: 6, border: "none", background: idx === currentDay.items.length - 1 ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.08)", color: idx === currentDay.items.length - 1 ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.5)", cursor: idx === currentDay.items.length - 1 ? "default" : "pointer", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}
-                  >▼</button>
+                  <button onClick={() => moveItem(currentDay.id, idx, -1)} disabled={idx === 0} style={{ width: 22, height: 22, borderRadius: 6, border: "none", background: idx === 0 ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.08)", color: idx === 0 ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.5)", cursor: idx === 0 ? "default" : "pointer", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>▲</button>
+                  <button onClick={() => moveItem(currentDay.id, idx, 1)} disabled={idx === currentDay.items.length - 1} style={{ width: 22, height: 22, borderRadius: 6, border: "none", background: idx === currentDay.items.length - 1 ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.08)", color: idx === currentDay.items.length - 1 ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.5)", cursor: idx === currentDay.items.length - 1 ? "default" : "pointer", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>▼</button>
                 </div>
 
                 {editingId === item.id ? (
@@ -179,6 +169,7 @@
                     <input value={editForm.time} onChange={e => setEditForm({ ...editForm, time: e.target.value })} placeholder="시간 (예: 점심)" style={inputStyle} />
                     <input value={editForm.title} onChange={e => setEditForm({ ...editForm, title: e.target.value })} placeholder="일정 이름" style={{ ...inputStyle, fontWeight: 700, fontSize: 15, marginTop: 6 }} />
                     <input value={editForm.desc} onChange={e => setEditForm({ ...editForm, desc: e.target.value })} placeholder="메모 (선택사항)" style={{ ...inputStyle, marginTop: 6, fontSize: 12 }} />
+                    <input value={editForm.map || ""} onChange={e => setEditForm({ ...editForm, map: e.target.value })} placeholder="📍 장소명 또는 주소 (Google Maps 연결)" style={{ ...inputStyle, marginTop: 6, fontSize: 12 }} />
                     <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
                       <button onClick={() => saveEdit(currentDay.id)} style={btnPrimary(currentDay.color)}>저장</button>
                       <button onClick={() => setEditingId(null)} style={btnSecondary}>취소</button>
@@ -186,15 +177,28 @@
                     </div>
                   </div>
                 ) : (
-                  <div onClick={() => startEdit(item)} style={{ flex: 1, marginBottom: 8, cursor: "pointer", background: item.done ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, opacity: item.done ? 0.5 : 1 }}>
-                    <div style={{ flex: 1 }}>
-                      {item.time && <div style={{ fontSize: 10, color: currentDay.color, fontWeight: 600, marginBottom: 2, letterSpacing: 1 }}>{item.time}</div>}
-                      <div style={{ fontSize: 14, fontWeight: 600, textDecoration: item.done ? "line-through" : "none", color: item.done ? "rgba(255,255,255,0.4)" : "#fff" }}>{item.title}</div>
-                      {item.desc && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{item.desc}</div>}
+                  <div style={{ flex: 1, marginBottom: 8, background: item.done ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "12px 14px", opacity: item.done ? 0.5 : 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div onClick={() => startEdit(item)} style={{ flex: 1, cursor: "pointer" }}>
+                        {item.time && <div style={{ fontSize: 10, color: currentDay.color, fontWeight: 600, marginBottom: 2, letterSpacing: 1 }}>{item.time}</div>}
+                        <div style={{ fontSize: 14, fontWeight: 600, textDecoration: item.done ? "line-through" : "none", color: item.done ? "rgba(255,255,255,0.4)" : "#fff" }}>{item.title}</div>
+                        {item.desc && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{item.desc}</div>}
+                      </div>
+                      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                        {item.map ? (
+                          <a
+                            href={`https://maps.google.com/?q=${encodeURIComponent(item.map)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={e => e.stopPropagation()}
+                            style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(74,144,217,0.2)", border: "1px solid rgba(74,144,217,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, textDecoration: "none" }}
+                          >📍</a>
+                        ) : null}
+                        <button onClick={e => { e.stopPropagation(); toggleDone(currentDay.id, item.id); }} style={{ width: 30, height: 30, borderRadius: 8, border: "none", cursor: "pointer", background: item.done ? currentDay.color : "rgba(255,255,255,0.08)", color: item.done ? "#fff" : "rgba(255,255,255,0.3)", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {item.done ? "✓" : "○"}
+                        </button>
+                      </div>
                     </div>
-                    <button onClick={e => { e.stopPropagation(); toggleDone(currentDay.id, item.id); }} style={{ width: 30, height: 30, borderRadius: 8, border: "none", cursor: "pointer", background: item.done ? currentDay.color : "rgba(255,255,255,0.08)", color: item.done ? "#fff" : "rgba(255,255,255,0.3)", fontSize: 15, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {item.done ? "✓" : "○"}
-                    </button>
                   </div>
                 )}
               </div>
@@ -210,3 +214,4 @@
   </script>
 </body>
 </html>
+
